@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="枪骑兵和奇才的连续线稿折纸演示">
+  <title>纸飞机折法图册</title>
+  <link rel="stylesheet" href="./pilot.css">
+  <script src="./pilot.js" defer></script>
+</head>
+<body>
+  <main>
+    <header class="masthead"><a href="./">纸飞机折法图册</a><span>亲子试读</span></header>
+    <p id="loading" role="status">正在打开图册……</p>
+    <section id="catalog" hidden>
+      <h1>今天折哪一架？</h1>
+      <a class="choice" href="?m=lancer"><span>108</span><strong>枪骑兵</strong><small>LANCER · 60 步</small></a>
+      <a class="choice" href="?m=phenom"><span>109</span><strong>奇才</strong><small>PHENOM · 58 步</small></a>
+    </section>
+    <article id="lesson" hidden>
+      <div class="model"><span id="number"></span><h1 id="name"></h1><span id="english"></span></div>
+      <div id="supply"></div>
+      <div class="step-index">
+        <label for="step">跳到</label>
+        <select id="step" aria-label="选纸书上的步骤号"></select>
+        <progress id="whole" value="1" aria-label="整架飞机的进度"></progress>
+      </div>
+      <div class="direction" id="direction"></div>
+      <h2 id="title"></h2>
+      <div id="instruction"></div>
+      <section class="gallery" aria-label="实际折叠线稿">
+        <div class="caption"><span id="phase"></span><span id="print"></span></div>
+        <svg id="scene" viewBox="0 0 512 288" role="img" aria-label="从当前纸形开始播放真实折叠路线"></svg>
+      </section>
+      <p id="note"></p>
+      <div class="seek">
+        <button id="before" type="button">看起点</button>
+        <input id="position" aria-label="本步动作进度" type="range" min="0" max="1000" value="0">
+        <button id="after" type="button">看结果</button>
+      </div>
+      <div class="tools">
+        <button id="play" class="primary" type="button">播放动作</button>
+        <button id="replay" type="button">本步重播</button>
+        <button id="locate" type="button">找位置</button>
+      </div>
+      <div class="settings">
+        <label><input type="checkbox" id="slow"> 慢放</label>
+        <label><input type="checkbox" id="continuous"> 自动接下一步</label>
+        <button id="restart" type="button">回到原纸</button>
+      </div>
+      <p id="status" aria-live="polite"></p>
+      <div id="check" class="check"></div>
+      <nav aria-label="翻到上一折或下一折">
+        <button id="prev" type="button">← 上一步</button>
+        <button id="next" class="primary" type="button">下一步 →</button>
+      </nav>
+    </article>
+    <footer>设计 Kyle Boyer · Foldable Flight<br>依据实际折叠过程描线</footer>
+  </main>
+</body>
+</html>
