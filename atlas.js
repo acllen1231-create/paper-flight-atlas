@@ -168,6 +168,10 @@ function go(index) {
   history.replaceState(null,'',`#step-${index+1}`);
   seek(0);
 }
+function hashStep() {
+  const oneBased=Number(location.hash.match(/^#step-(\d+)$/)?.[1]) || 1;
+  return Math.max(0,Math.min(book.steps.length-1,oneBased-1));
+}
 async function catalog() {
   const response=await fetch('./data/catalog.json');
   if(!response.ok) throw new Error('catalog');
@@ -205,8 +209,7 @@ async function start() {
       document.title=`${book.cn} · 纸飞机折叠图鉴`;
       $('progress').max=book.steps.length;
       for (const [i,s] of book.steps.entries()) $('step').add(new Option(`第 ${i+1} 步 · ${s.title}`,i));
-      const next=Number(location.hash.match(/^#step-(\d+)$/)?.[1]) || 1;
-      go(Math.max(0,Math.min(book.steps.length-1,next-1)));
+      go(hashStep());
       $('lesson').hidden=false;
     }
     $('loading').hidden=true;
@@ -223,4 +226,5 @@ $('step').onchange=e=>go(Number(e.target.value));
 $('prev').onclick=()=>{go(current-1);scrollTo(0,0);};
 $('next').onclick=()=>{go(current+1);scrollTo(0,0);};
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&running)stop();});
+window.addEventListener('hashchange',()=>{if(book)go(hashStep());});
 start();
