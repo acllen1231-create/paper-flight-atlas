@@ -1,0 +1,44 @@
+:root {
+  color-scheme:light;
+  background:#faf9f5;
+  color:#181818;
+  font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+* { box-sizing:border-box; }
+[hidden] { display:none !important; }
+body { margin:0; }
+main { max-width:610px; margin:auto; padding:13px 15px calc(env(safe-area-inset-bottom) + 22px); }
+header { display:flex; align-items:center; justify-content:space-between; gap:9px; padding:7px 0 12px; border-bottom:1px solid; }
+header a { color:inherit; text-decoration:none; font-size:1rem; font-weight:750; }
+header span, footer { color:#545454; font-size:.83rem; }
+#status { padding:5px 0; font-size:.92rem; }
+h1 { font-size:clamp(1.85rem,8vw,2.6rem); letter-spacing:-.055em; line-height:1.12; margin:16px 0; }
+h2 { margin:12px 0 9px; font-size:clamp(1.04rem,4.6vw,1.4rem); line-height:1.4; }
+.title { display:flex; align-items:baseline; gap:10px; }
+#number { font-weight:800; }
+.picker, .seek, .controls, nav, .options { display:flex; align-items:center; gap:8px; }
+.picker, .seek { font-size:.87rem; color:#454545; }
+.picker select { flex:1; min-width:0; text-overflow:ellipsis; }
+figure { margin:0 0 9px; border:1px solid #333; background:#fff; }
+figcaption { display:flex; justify-content:space-between; gap:8px; padding:6px 9px; font-size:.89rem; border-bottom:1px solid #ccc; }
+#phase { font-weight:690; }
+#scene { display:block; height:clamp(172px,54vw,318px); width:100%; }
+button, select, input { font:inherit; color:inherit; }
+button, select { border:1px solid #818181; border-radius:4px; background:#fff; padding:6px 10px; min-height:36px; }
+button { min-height:43px; cursor:pointer; font-size:.93rem; font-weight:650; }
+button.primary { color:white; background:#212121; border-color:#212121; }
+button:disabled { opacity:.48; cursor:default; }
+input { accent-color:#202020; }
+.controls { flex-wrap:wrap; }
+.controls label, .options label { display:flex; align-items:center; gap:4px; font-size:.9rem; min-height:36px; }
+.seek { margin:8px 0; }
+.seek input { flex:1; min-width:35px; }
+nav { padding:8px 0; border-top:1px solid #ccc; margin-top:8px; }
+nav button { flex:1; }
+.options { justify-content:space-between; }
+.options button { min-height:35px; }
+.choice { color:inherit; text-decoration:none; display:grid; grid-template-columns:44px 1fr; padding:16px 5px; gap:3px 12px; border-block-end:1px solid #bdbdbd; }
+.choice strong { font-size:1.25rem; }
+.choice small { grid-column:2; color:#555; }
+footer { margin-top:15px; padding-top:10px; border-top:1px solid #ccc; }
+:focus-visible { outline:3px solid #595959; outline-offset:2px; }

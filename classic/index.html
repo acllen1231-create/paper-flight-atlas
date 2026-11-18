@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>一张纸，两架飞机</title>
+  <link rel="stylesheet" href="./classic.css">
+  <script src="./classic.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><a href="./">一张纸，两架飞机</a><span>纸飞机折法图册</span></header>
+    <p id="status" role="status">正在打开图册……</p>
+    <section id="catalog" hidden>
+      <h1>今天折哪一架？</h1>
+      <a class="choice" href="?m=lancer"><span>108</span><strong>枪骑兵</strong><small>正方形纸</small></a>
+      <a class="choice" href="?m=phenom"><span>109</span><strong>奇才</strong><small>US Letter 纸</small></a>
+    </section>
+    <article id="lesson" hidden>
+      <div class="title"><span id="number"></span><h1 id="name"></h1></div>
+      <label class="picker" for="step"><span>选书上的格号</span><select id="step"></select></label>
+      <h2 id="instruction"></h2>
+      <figure>
+        <figcaption><span id="phase">折法图</span><span id="print"></span></figcaption>
+        <svg id="scene" viewBox="0 0 100 100" role="img" aria-label="纸面折法和动画"></svg>
+      </figure>
+      <div class="controls">
+        <button id="play" class="primary" type="button">播放动作</button>
+        <button id="diagram" type="button">看折法图</button>
+        <label><input type="checkbox" id="slow">慢放</label>
+      </div>
+      <label class="seek" for="seek"><span>动作进度</span><input id="seek" type="range" min="0" max="1000" value="0" disabled></label>
+      <nav aria-label="查看前后步骤">
+        <button id="prev" type="button">← 上一格</button>
+        <button id="next" type="button" class="primary">下一格 →</button>
+      </nav>
+      <div class="options"><label><input id="auto" type="checkbox">自动接下一格</label><button id="restart" type="button">回第 1 格</button></div>
+    </article>
+    <footer>设计 Kyle Boyer · Foldable Flight</footer>
+  </main>
+</body>
+</html>
