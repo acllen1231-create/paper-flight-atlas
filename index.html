@@ -4,19 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="纸飞机折叠图鉴的逐步折法动画">
-  <title>纸飞机折叠图鉴 · 一步一折</title>
-  <link rel="stylesheet" href="./atlas.css">
-  <script src="./atlas.js" defer></script>
+  <meta name="description" content="纸飞机连续折法。先接上一步的纸形，再看本步如何折。">
+  <title>纸飞机折叠图鉴 · 一折接一折</title>
+  <link rel="stylesheet" href="./atlas.css?v=sequence">
+  <script src="./atlas.js?v=sequence" defer></script>
 </head>
 <body>
   <main>
     <header class="masthead">
       <svg class="brand-mark" viewBox="0 0 30 24" aria-hidden="true"><path d="M1 13 29 2 21 22 15 15 10 20 11 13Z M11 13 29 2 15 15"/></svg>
       <a href="./">纸飞机折叠图鉴</a>
-      <span>一步一折</span>
+      <span>连续折法</span>
     </header>
-    <div id="loading" role="status">正在打开折法……</div>
+    <p id="loading" role="status">正在打开折法……</p>
     <section id="catalog" hidden>
       <h1>选一架飞机</h1>
       <label for="filter">查找机型</label>
@@ -28,34 +28,42 @@
       <p id="english" class="english"></p>
       <div class="progress-line">
         <label for="step">跳到</label>
-        <select id="step" aria-label="按书上的步骤号跳转"></select>
+        <select id="step" aria-label="按纸书的步骤号跳转"></select>
         <progress id="progress" aria-label="折纸步骤进度"></progress>
       </div>
+      <p id="coverage" class="coverage"></p>
       <div class="step-title">
         <p id="number"></p><h2 id="title"></h2>
       </div>
       <p class="instruction" id="instruction"></p>
-      <section class="demonstration" aria-label="逐步看折法">
+      <div class="guide" id="photo-guide" hidden>
+        <strong>用纸书图片对照这一折</strong>
+        <p id="guide-copy"></p>
+      </div>
+      <section class="demonstration" id="demo" aria-label="纸形演示">
         <div class="diagram-head">
-          <span id="type"></span><span id="phase" aria-live="off"></span>
+          <span id="type"></span><span id="phase"></span>
         </div>
-        <svg id="paper" viewBox="0 0 100 72" role="img" aria-label="当前折法的线图和折叠方向"></svg>
+        <svg id="paper" viewBox="0 0 100 86" role="img" aria-label="当前纸形和要动的纸片"></svg>
       </section>
       <p id="hint" class="hint"></p>
-      <div class="controls">
-        <button type="button" class="primary" id="play">播放动画</button>
-        <button type="button" id="replay">从头重播</button>
-        <label class="slow"><input id="slow" type="checkbox">慢一点</label>
-      </div>
-      <div class="seek">
-        <button type="button" id="before">看开始</button>
-        <input id="position" type="range" min="0" max="1000" value="0" aria-label="折叠动作进度">
-        <button type="button" id="after">看结果</button>
+      <div id="player">
+        <div class="controls">
+          <button type="button" class="primary" id="play">播放动作</button>
+          <button type="button" id="replay">从头重播</button>
+          <label class="slow"><input id="slow" type="checkbox">慢一点</label>
+        </div>
+        <div class="seek">
+          <button type="button" id="before">看起点</button>
+          <input id="position" type="range" min="0" max="1000" value="0" aria-label="折叠动作进度">
+          <button type="button" id="after">看结果</button>
+        </div>
       </div>
       <div id="checkpoint" hidden>
         <h3>折好看看</h3>
         <p id="check"></p>
       </div>
+      <p id="page" class="book-page"></p>
       <nav class="navigation" aria-label="切换步骤">
         <button type="button" id="prev">← 上一步</button>
         <button type="button" class="primary" id="next">下一步 →</button>

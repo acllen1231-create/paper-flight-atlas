@@ -58,3 +58,8 @@ input[type="checkbox"], input[type="range"] { accent-color: var(--ink); }
 #models a { display: flex; flex-direction: column; min-height: 57px; text-decoration: none; padding: 7px 0; color: var(--ink); font-weight: 720; }
 #models small { font-size: .75rem; color: var(--soft-ink); font-weight: 500; }
 footer { border-top: 1px solid var(--border); margin-top: 15px; padding-top: 9px; color: var(--soft-ink); font-size: .78rem; }
+.coverage { color: var(--soft-ink); font-size: .85rem; margin: -.15rem 0 .72rem; }
+.guide { border: 1px solid #918e85; padding: 10px 12px; background: #fff; margin: 10px 0; }
+.guide p { margin: 5px 0 0; line-height: 1.5; }
+.book-page { color: var(--soft-ink); font-size: .89rem; margin: 11px 0 0; }
+#paper { height: clamp(170px, 55vw, 310px); }

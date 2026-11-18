@@ -1,156 +1,200 @@
 "use strict";
-const $ = id => document.getElementById(id);
-const ns = 'http://www.w3.org/2000/svg';
-const target = $('paper');
-const query = new URLSearchParams(location.search);
+const $=id=>document.getElementById(id);
+const ns='http://www.w3.org/2000/svg';
+const target=$('paper');
+const query=new URLSearchParams(location.search);
 let book;
-let current = 0;
-let time = 0;
-let tickID;
-let lastFrame = 0;
-let running = false;
-
-const draw = (tag, attrs, parent = target) => {
-  const node = document.createElementNS(ns, tag);
-  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+let current=0;
+let progress=0;
+let playID;
+let last=0;
+let running=false;
+const svg=(tag,attrs,parent=target)=>{
+  const node=document.createElementNS(ns,tag);
+  for(const [key,value] of Object.entries(attrs)) node.setAttribute(key,value);
   parent.append(node);
   return node;
 };
-const outline = {stroke:'#131312','vector-effect':'non-scaling-stroke','stroke-width':1.65,'stroke-linejoin':'round'};
+const stroke={'vector-effect':'non-scaling-stroke',stroke:'#171713','stroke-width':1.48,'stroke-linejoin':'round'};
+const xy=point=>point.join(' ');
 
-function polygon(points, fill, group) {
-  draw('polygon', {...outline, points:points.map(point => point.join(',')).join(' '),fill},group);
+function area(points,fill,g) {
+  svg('polygon',{...stroke,points:points.map(p=>p.join(',')).join(' '),fill},g);
 }
-function crease(a,b,dashed,group) {
-  draw('line',{...outline,x1:a[0],y1:a[1],x2:b[0],y2:b[1],
-    stroke:dashed?'#181817':'#77766e','stroke-width':dashed?1.7:1.15,'stroke-dasharray':dashed?'5 4':'none'},group);
+function line(a,b,style,g) {
+  svg('line',{...stroke,x1:a[0],y1:a[1],x2:b[0],y2:b[1],
+    stroke:style==='edge'?'#605e57':'#171713',
+    'stroke-width':style==='edge'?1.05:1.66,
+    'stroke-dasharray':style==='valley'?'5.2 3':style==='mountain'?'5 2.5 1 2.5':'none'},g);
 }
-function marker() {
-  const defs=draw('defs',{});
-  const arrow=draw('marker',{id:'arrow',viewBox:'0 0 10 10',refX:8,refY:5,
-    markerWidth:6,markerHeight:6,orient:'auto'},defs);
-  draw('path',{d:'M 0 0 L 10 5 L 0 10 Z',fill:'#171715'},arrow);
+function badge(p,label,g) {
+  svg('circle',{cx:p[0],cy:p[1],r:label?2.44:.95,fill:'#181815',
+    stroke:'#fff','stroke-width':.63,'vector-effect':'non-scaling-stroke'},g);
+  if(label) svg('text',{x:p[0],y:p[1]+.93,'text-anchor':'middle',
+    fill:'#fff','font-size':2.8,'font-weight':750},g).textContent=label.length===1?label:'•';
 }
-function figure(frame,group,arrows=true,markSize=1) {
-  polygon(frame.paper,'#fff',group);
-  for (const layer of frame.layers) polygon(layer,'#e1dfd8',group);
-  for (const [a,b] of frame.creases) crease(a,b,false,group);
-  for (const [a,b] of frame.dashed) crease(a,b,true,group);
-  for (const [[x,y],name] of frame.marks) {
-    draw('circle',{cx:x,cy:y,r:(name?2.15:1.05)*markSize,fill:'#1f1f1b',stroke:'#fff',
-      'stroke-width':.65,'vector-effect':'non-scaling-stroke'},group);
-    if (name && name.length===1) {
-      const badge=draw('text',{x,y:y+.83*markSize,'text-anchor':'middle',fill:'#fff',
-        'font-size':2.6*markSize,'font-weight':'750'},group);
-      badge.textContent=name;
+function defs() {
+  const group=svg('defs',{});
+  for(const [id,fill] of [['solid','#171713'],['hollow','#fff']]) {
+    const marker=svg('marker',{id,viewBox:'0 0 10 10',refX:8,refY:5,
+      markerWidth:6,markerHeight:6,orient:'auto'},group);
+    svg('path',{d:'M.9 1L9 5 .9 9Z',fill,stroke:'#171713','stroke-width':1},marker);
+  }
+}
+function drawPose(s,g) {
+  if(!s)return;
+  area(s.paper,'#fff',g);
+  s.layers.forEach((p,i)=>area(p,i%2?'#eeede7':'#e1dfd8',g));
+  s.creases.forEach(([a,b])=>line(a,b,'edge',g));
+  s.marks.forEach(([p,label])=>badge(p,label,g));
+}
+function drawMove(move,g,breathe=0) {
+  if(!move)return;
+  const axes=[...(move.axis.length?[move.axis]:[]),...move.extra_axes];
+  if(['valley','mountain'].includes(move.kind)) {
+    for(const [a,b] of axes) line(a,b,move.kind,g);
+  }
+  const hollow=['push','reverse','tuck','shape'].includes(move.kind);
+  for(const [a,u,b] of move.arrows) {
+    const d=`M ${xy(a)} Q ${xy(u)} ${xy(b)}`;
+    svg('path',{d,fill:'none',stroke:'#fff','stroke-width':4.7,'vector-effect':'non-scaling-stroke'},g);
+    svg('path',{d,fill:'none',stroke:'#171713','stroke-width':2.05,
+      'vector-effect':'non-scaling-stroke','marker-end':`url(#${hollow?'hollow':'solid'})`},g);
+    if(hollow) svg('path',{d,fill:'none',stroke:'#fff','stroke-width':.63,
+      'vector-effect':'non-scaling-stroke'},g);
+    if(breathe>0 && breathe<1) {
+      const t=breathe,k=1-t;
+      const x=k*k*a[0]+2*k*t*u[0]+t*t*b[0];
+      const y=k*k*a[1]+2*k*t*u[1]+t*t*b[1];
+      svg('circle',{cx:x,cy:y,r:1.45,fill:'#73716a',stroke:'#fff','stroke-width':.45},g);
     }
   }
-  if (arrows) for (const [a,b,c] of frame.arrows) {
-    const d=`M ${a.join(' ')} Q ${b.join(' ')} ${c.join(' ')}`;
-    draw('path',{d,fill:'none',stroke:'#fff','stroke-width':5,'vector-effect':'non-scaling-stroke'},group);
-    draw('path',{d,fill:'none',stroke:'#161614','stroke-width':2.25,
-      'vector-effect':'non-scaling-stroke','marker-end':'url(#arrow)'},group);
-  }
+  move.marks.forEach(([p,label])=>badge(p,label,g));
 }
-
-function rotatePoint(point, angle, seam) {
-  const [a,b]=seam, dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy);
-  const ux=dx/length,uy=dy/length,x=point[0]-a[0],y=point[1]-a[1];
+function project(p,angle,seam) {
+  const [a,b]=seam;
+  const dx=b[0]-a[0],dy=b[1]-a[1],d=Math.hypot(dx,dy);
+  const ux=dx/d,uy=dy/d,x=p[0]-a[0],y=p[1]-a[1];
   const along=x*ux+y*uy,cross=y*ux-x*uy;
-  const scale=cross*Math.cos(angle), lift=Math.abs(cross)*Math.sin(angle)*.16;
-  return [a[0]+along*ux-scale*uy,a[1]+along*uy+scale*ux-lift];
+  const shift=cross*Math.cos(angle),lift=Math.abs(cross)*Math.sin(angle)*.19;
+  return [a[0]+along*ux-shift*uy,a[1]+along*uy+shift*ux-lift];
 }
-function motion(m,t,g) {
-  let p=t;
-  if (m.practice) p=p<.53?p/.53:(1-p)/.47;
-  if (m.opening) p=1-p;
-  const angle=(1-Math.cos(Math.PI*p))*Math.PI/2;
-  polygon(m.fixed,'#fff',g);
-  for (const part of m.parts) {
-    polygon(part.paper.map(v=>rotatePoint(v,angle,part.crease)),p>.5?'#d3d2cd':'#e5e4df',g);
-    crease(...part.crease,true,g);
+function changePose(s,g,move,t) {
+  if(move.kind==='turn') {
+    g.setAttribute('transform',`rotate(${180*t} 50 42.5)`);
+  } else {
+    const m=Math.cos(Math.PI*t);
+    const horizontal=move.arrows[0] && Math.abs(move.arrows[0][0][0]-move.arrows[0][2][0])>
+                      Math.abs(move.arrows[0][0][1]-move.arrows[0][2][1]);
+    g.setAttribute('transform',horizontal?`translate(50 0) scale(${m} 1) translate(-50 0)`:
+      `translate(0 43) scale(1 ${m}) translate(0 -43)`);
   }
+  drawPose(s,g);
 }
-function between(a,b,t) {
-  return a.map(([x,y],i)=>[x+(b[i][0]-x)*t,y+(b[i][1]-y)*t]);
-}
-function canTween(a,b) {
-  return a.paper.length===b.paper.length && a.layers.length===b.layers.length
-    && a.layers.every((layer,i)=>layer.length===b.layers[i].length);
-}
-function betweenFrames(a,b,t,g) {
-  polygon(between(a.paper,b.paper,t),'#fff',g);
-  for (const [i,layer] of a.layers.entries()) polygon(between(layer,b.layers[i],t),'#e1dfd8',g);
-  for (const [x,y] of a.dashed) crease(x,y,true,g);
-  for (const [point,name] of a.marks) {
-    if (!name || name.length!==1) continue;
-    const next=b.marks.find(item=>item[1]===name);
-    if (!next) continue;
-    const [[x,y]]=between([point],[next[0]],t);
-    draw('circle',{cx:x,cy:y,r:2.3,fill:'#1f1f1b',stroke:'#fff','stroke-width':.6,
-      'vector-effect':'non-scaling-stroke'},g);
-    const letter=draw('text',{x,y:y+.89,'text-anchor':'middle',fill:'#fff','font-size':2.65,'font-weight':'750'},g);
-    letter.textContent=name;
+function animate(phase,move,from,to,g) {
+  const p=(1-Math.cos(Math.PI*phase))/2;
+  if(move.kind==='turn'||move.kind==='flip') {
+    changePose(from,g,move,p);
+    return;
   }
+  if(move.kind==='tuck' && move.moving.length) {
+    const [a,,b]=move.arrows[0];
+    drawPose({...from,layers:from.layers.slice(move.moving.length)},g);
+    const shift=[(b[0]-a[0])*p,(b[1]-a[1])*p];
+    let id='slot-mask';
+    const clip=svg('clipPath',{id});
+    const left=b[0]>a[0];
+    svg('rect',{x:left?0:b[0],y:0,width:left?b[0]:100-b[0],height:86},clip);
+    const overlay=svg('g',{'clip-path':`url(#${id})`},g);
+    for(const [i,flap] of move.moving.entries()) {
+      area(flap.map(([x,y])=>[x+shift[0],y+shift[1]]),i?'#dedcd4':'#c7c5bb',overlay);
+    }
+    drawMove({...move,marks:move.marks.map(([point,label])=>
+      [label==='1'?[point[0]+shift[0],point[1]+shift[1]]:point,label])},g,p);
+    return;
+  }
+  if(move.moving.length && (move.axis.length||move.animation)) {
+    let progress=p;
+    if(move.animation?.practice)progress=p<=.55?p/.55:(1-p)/.45;
+    if(move.animation?.opening || move.kind==='unfold')progress=1-progress;
+    const theta=progress*Math.PI*(move.kind==='mountain'?-1:1);
+    for(const [i,fixed] of move.fixed.entries())area(fixed,i?'#e3e0d8':'#fff',g);
+    move.moving.forEach((layer,i)=>{
+      const axis=move.animation?.axes[i]||move.axis;
+      area(layer.map(point=>project(point,theta,axis)),p>.5?'#cccac1':'#e1dfd7',g);
+    });
+    drawMove({...move,arrows:[],marks:[]},g);
+    return;
+  }
+  // If the fold has no flat hinge geometry, display the marked action on the
+  // same paper until the next authored paper state is reached.
+  drawPose(from,g);
+  drawMove(move,g,p);
 }
 function render() {
-  const step=book.steps[current], frames=step.frames, [x,X,y,Y]=step.bounds;
-  const pad=Math.max(X-x,Y-y)*.14;
-  target.setAttribute('viewBox',`${x-pad} ${y-pad} ${X-x+2*pad} ${Y-y+2*pad}`);
+  const step=book.steps[current];
+  const preceding=book.states[String(current)];
   target.replaceChildren();
-  marker();
-  const tween=Math.max(0,Math.min(1,(time-.13)/.75));
-  const last=frames.length-1;
-  const area=Math.max(X-x,Y-y);
-  const g=draw('g',{});
-  if (tween<=0 || tween>=1) {
-    const frame=tween<=0?0:last;
-    figure(frames[frame],g,frame===0,area/78);
-    $('phase').textContent=step.phases[frame];
-  } else if (step.motion) {
-    motion(step.motion,tween,g);
-    $('phase').textContent='纸片移动中';
-  } else {
-    const start=Math.min(last-1,Math.floor(tween*last)), end=start+1, t=tween*last-start;
-    const a=frames[start],b=frames[end];
-    if (canTween(a,b)) {
-      betweenFrames(a,b,t,g);
-    } else {
-      const index=t<.56?start:end;
-      figure(frames[index],g,index===0,area/78);
+  defs();
+  const g=svg('g',{});
+  const beforeCaption=current===0?'原纸':`接第 ${current} 步`;
+  if(!step.moves) {
+    $('demo').hidden=!preceding;
+    if(preceding){
+      $('type').textContent='上一折的纸形';
+      $('phase').textContent=beforeCaption;
+      drawPose(preceding,g);
     }
-    $('phase').textContent=step.phases[t<.56?start:end];
+    return;
   }
-  $('position').value=String(Math.round(time*1000));
+  if(progress===1) {
+    $('type').textContent='核对纸形';
+    $('phase').textContent=`折好 ${current+1}`;
+    drawPose(book.states[String(current+1)],g);
+  } else {
+    const value=progress*step.moves.length, phase=Math.floor(value);
+    const move=step.moves[phase];
+    const from=phase===0?preceding:book.states[step.moves[phase-1].to];
+    const to=book.states[move.to];
+    const local=value-phase;
+    $('type').textContent=phase===0?beforeCaption:`动作 ${phase+1}`;
+    $('phase').textContent=move.title;
+    if(local<.24) { drawPose(from,g); drawMove(move,g); }
+    else if(local>.86) drawPose(to,g);
+    else animate((local-.24)/.62,move,from,to,g);
+  }
+  $('position').value=String(Math.round(progress*1000));
 }
 function stop() {
-  cancelAnimationFrame(tickID);
-  lastFrame=0;
+  cancelAnimationFrame(playID);
   running=false;
-  $('play').textContent=time===1?'再看一遍':time>0?'继续播放':'播放动画';
+  last=0;
+  $('play').textContent=progress===1?'再看一遍':progress>0?'继续播放':'播放动作';
 }
-function tick(now) {
-  if (!running) return;
-  if (lastFrame) time=Math.min(1,time+(now-lastFrame)/($('slow').checked?5700:2850));
-  lastFrame=now;
+function animateFrame(now) {
+  if(!running)return;
+  const stages=book.steps[current].moves.length;
+  if(last)progress=Math.min(1,progress+(now-last)/((($('slow').checked)?5850:3050)*stages));
+  last=now;
   render();
-  if (time===1) return stop();
-  tickID=requestAnimationFrame(tick);
+  if(progress===1){stop();return;}
+  playID=requestAnimationFrame(animateFrame);
 }
-function play(replay=false) {
-  if (running) stop();
-  if (replay || time===1) time=0;
-  running=true;
+function play(fromStart=false) {
+  if(!book.steps[current].moves)return;
+  stop();
+  if(fromStart||progress===1)progress=0;
   $('play').textContent='暂停';
-  tickID=requestAnimationFrame(tick);
+  running=true;
+  playID=requestAnimationFrame(animateFrame);
 }
-function seek(value) {
-  time=value;
+function seek(p) {
+  progress=p;
   stop();
   render();
 }
 function go(index) {
-  if (index<0 || index>=book.steps.length) return;
+  if(index<0||index>=book.steps.length)return;
   current=index;
   const step=book.steps[index];
   $('step').value=String(index);
@@ -158,38 +202,44 @@ function go(index) {
   $('number').textContent=String(index+1).padStart(2,'0');
   $('title').textContent=step.title;
   $('instruction').textContent=step.body;
-  $('type').textContent=step.exact?'机型线图':step.custom?'关键动作线图':'局部动作示意';
-  $('hint').textContent=step.hint;
+  $('photo-guide').hidden=!!step.moves;
+  $('guide-copy').textContent=`翻到连续对照版第 ${step.page} 页。从左边纸形接着折，右边是本步折好样子。`;
+  $('player').hidden=!step.moves;
+  $('demo').hidden=!step.moves && !book.states[String(index)];
+  $('hint').hidden=!step.moves;
+  $('hint').textContent=step.moves?.length>1?'慢慢做，先看第一个动作做完的样子。':'照箭头动纸片。折好后，比一比纸边。';
+  $('check').textContent=step.check||'';
   $('checkpoint').hidden=!step.check;
-  $('check').textContent=step.check;
+  $('page').textContent=`连续对照版 · 第 ${step.page} 页`;
   $('prev').disabled=index===0;
   $('next').disabled=index===book.steps.length-1;
-  $('next').textContent=$('next').disabled?'完成':'下一步 →';
+  $('next').textContent=$('next').disabled?'折完了':'下一步 →';
   history.replaceState(null,'',`#step-${index+1}`);
   seek(0);
 }
-function hashStep() {
-  const oneBased=Number(location.hash.match(/^#step-(\d+)$/)?.[1]) || 1;
-  return Math.max(0,Math.min(book.steps.length-1,oneBased-1));
+function hashIndex() {
+  const n=Number(location.hash.match(/^#step-(\d+)$/)?.[1])||1;
+  return Math.max(0,Math.min(book.steps.length-1,n-1));
+}
+async function load(name) {
+  const res=await fetch(`./data/${name}.json?v=sequence`);
+  if(!res.ok)throw new Error(name);
+  return await res.json();
 }
 async function catalog() {
-  const response=await fetch('./data/catalog.json');
-  if(!response.ok) throw new Error('catalog');
-  const names=await response.json();
-  function filter() {
-    const term=$('filter').value.toLowerCase().trim();
-    const rows=names.filter(row=>row.search.includes(term)).map(row=>{
-      const entry=document.createElement('li'), link=document.createElement('a');
-      const name=document.createElement('span'), en=document.createElement('small');
-      name.textContent=`${row.no}  ${row.cn}`;
-      en.textContent=row.en;
-      link.href=`?m=${row.slug}`;
-      link.append(name,en);
-      entry.append(link);
-      return entry;
+  const models=await load('catalog');
+  const filter=()=>{
+    const word=$('filter').value.toLowerCase().trim();
+    const rows=models.filter(m=>m.search.includes(word)).map(m=>{
+      const li=document.createElement('li'),a=document.createElement('a');
+      const label=document.createElement('span'),en=document.createElement('small');
+      label.textContent=`${m.no}  ${m.cn}`;
+      en.textContent=m.en;
+      a.href=`?m=${m.slug}`;a.append(label,en);li.append(a);
+      return li;
     });
     $('models').replaceChildren(...rows);
-  }
+  };
   filter();
   $('filter').oninput=filter;
   $('catalog').hidden=false;
@@ -197,24 +247,24 @@ async function catalog() {
 async function start() {
   try {
     const slug=query.get('m');
-    if (!slug) {
-      await catalog();
-    } else {
-      if (!/^[a-z0-9-]+$/.test(slug)) throw new Error('model');
-      const result=await fetch(`./data/${slug}.json`);
-      if (!result.ok) throw new Error('model');
-      book=await result.json();
+    if(!slug)await catalog();
+    else {
+      if(!/^[a-z0-9-]+$/.test(slug))throw new Error('slug');
+      book=await load(slug);
       $('name').textContent=book.cn;
       $('english').textContent=book.en;
-      document.title=`${book.cn} · 纸飞机折叠图鉴`;
+      document.title=`${book.cn} · 连续折法`;
+      $('coverage').textContent=book.drawn===book.steps.length?
+        '每一步接着上一折的纸形。':
+        `目前 ${book.drawn} 步有连续线图。其余步骤按页面提示查纸书。`;
       $('progress').max=book.steps.length;
-      for (const [i,s] of book.steps.entries()) $('step').add(new Option(`第 ${i+1} 步 · ${s.title}`,i));
-      go(hashStep());
+      book.steps.forEach((step,i)=>$('step').add(new Option(`第 ${i+1} 步 · ${step.title}`,i)));
+      go(hashIndex());
       $('lesson').hidden=false;
     }
     $('loading').hidden=true;
-  } catch (_) {
-    $('loading').textContent='这个机型暂时打不开。可以点上方图鉴，按名字再找一次。';
+  } catch(_) {
+    $('loading').textContent='没有加载成功。点上方图鉴，从目录重试。';
   }
 }
 $('play').onclick=()=>running?stop():play();
@@ -225,6 +275,6 @@ $('position').oninput=e=>seek(Number(e.target.value)/1000);
 $('step').onchange=e=>go(Number(e.target.value));
 $('prev').onclick=()=>{go(current-1);scrollTo(0,0);};
 $('next').onclick=()=>{go(current+1);scrollTo(0,0);};
+window.addEventListener('hashchange',()=>{if(book)go(hashIndex());});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&running)stop();});
-window.addEventListener('hashchange',()=>{if(book)go(hashStep());});
 start();
