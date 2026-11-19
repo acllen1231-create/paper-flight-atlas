@@ -15,8 +15,8 @@
     <section id="catalog" hidden>
       <h1>看一张纸怎么折</h1>
       <a class="choice" href="?m=dart"><strong>入门飞镖</strong><span>从原纸折到成品</span></a>
-      <a class="choice" href="?m=lancer"><strong>108 枪骑兵</strong><span>预折 · 折出纸带</span></a>
-      <a class="choice" href="?m=phenom"><strong>109 奇才</strong><span>预折 · 找到短斜痕</span></a>
+      <a class="choice" href="?m=lancer"><strong>108 枪骑兵</strong><span>立体折到两侧斜折，有后续线稿</span></a>
+      <a class="choice" href="?m=phenom"><strong>109 奇才</strong><span>立体折到撑袋前，有后续线稿</span></a>
     </section>
     <article id="lesson" hidden>
       <h1 id="name"></h1>
@@ -28,6 +28,7 @@
         <svg id="sheet" role="img" aria-label="纸片折叠动画"></svg>
       </figure>
       <p id="check" aria-live="polite"></p>
+      <p class="legend"><span><i></i>现在沿这里折</span><span><i class="old"></i>打开后留下的旧痕</span></p>
       <div class="progress"><label for="seek">这一折</label><input id="seek" type="range" min="0" max="1000" value="0"></div>
       <nav aria-label="播放折纸">
         <button id="previous" type="button">上一折</button>
@@ -38,6 +39,10 @@
         <label><input id="slow" type="checkbox"> 慢放</label>
         <button id="restart" type="button">回到原纸</button>
       </div>
+      <aside id="rest" hidden>
+        <a id="continue" href="#">接着折</a>
+        <p id="rest-note">后续用逐格线稿和动作示意，接着折到成品。</p>
+      </aside>
     </article>
   </main>
 </body>

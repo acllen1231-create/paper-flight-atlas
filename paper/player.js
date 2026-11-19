@@ -99,9 +99,9 @@ function draw() {
   }
   const move=model.steps[index];
   if (!progress && index) {
-    for (const seam of model.steps[index-1].carry) line(seam,'none',.7,'#77776c');
+    for (const seam of model.steps[index-1].carry) line(seam,'1 3',.95,'#67675d');
   } else if (progress===1) {
-    for (const seam of move.carry) line(seam,'none',.7,'#77776c');
+    for (const seam of move.carry) line(seam,'1 3',.95,'#67675d');
   }
   if (progress===0 && showHint) showGuide(move);
 }
@@ -120,9 +120,9 @@ function viewport() {
 
 function controls() {
   const atEnd=progress===1, final=index===model.steps.length-1;
-  get('play').textContent=playing?'暂停':atEnd?(final?(model.major?'折完了':'预折完成'):'折下一步'):
+  get('play').textContent=playing?'暂停':atEnd?(final?(model.major?'折完了':'看后续折法'):'折下一步'):
       progress>0?'接着折':'折一下';
-  get('play').disabled=atEnd && final;
+  get('play').disabled=atEnd && final && !model.continuation;
   get('previous').disabled=index===0;
   get('seek').value=Math.round(progress*1000);
   get('phase').textContent=playing?'正在折':atEnd?'折好了':progress>0?'暂停':'折之前';
@@ -150,7 +150,10 @@ function step(i) {
 function play() {
   if (playing) { stop();controls();return; }
   if (progress===1) {
-    if (index+1===model.steps.length) return;
+    if (index+1===model.steps.length) {
+      if (model.continuation) location.href=get('continue').href;
+      return;
+    }
     step(index+1);
   }
   const token=++stamp, duration=get('slow').checked?4200:2250;
@@ -177,6 +180,15 @@ async function main() {
     get('name').textContent=model.title;
     get('paper').textContent=model.paper;
     get('chapter').textContent=model.chapter;
+    if (model.continuation) {
+      const target=get('continue');
+      target.href=`../classic/?m=${slug}#step-${model.continuation.step}`;
+      target.textContent=model.continuation.label;
+      get('rest').hidden=false;
+      if (slug==='phenom') {
+        get('rest-note').textContent='从第 8 格看撑袋。这格开头的折尖刚做过，接着看拉开口袋的部分。';
+      }
+    }
     document.title=model.title+' · 一步一折';
     get('status').textContent='';
     get('lesson').hidden=false;
